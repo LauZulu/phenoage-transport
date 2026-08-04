@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "functions": {
+    "api/predict.py": {
+      "runtime": "python3.12",
+      "maxDuration": 10,
+      "memory": 512
+    }
+  },
+  "routes": [
+    { "src": "/api/predict", "dest": "api/predict.py" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ]
+}

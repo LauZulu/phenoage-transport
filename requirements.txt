@@ -1,0 +1,9 @@
+# Training / research pipeline (local, not shipped to Vercel)
+numpy>=2.0
+pandas>=2.0
+scipy>=1.11
+scikit-learn>=1.4
+shap>=0.45
+onnx>=1.16
+onnxruntime>=1.18
+skl2onnx>=1.17

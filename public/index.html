@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PhenoAge Transport · biological age under covariate shift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0e14; --panel:#111722; --panel-2:#0d131d;
+    --line:#1f2937; --line-bright:#2b3a4f;
+    --text:#e6edf5; --muted:#8595a8; --dim:#5b6b80;
+    --pulse:#4fd1c5;          /* erythroid teal — the altitude signal */
+    --warn:#e8a33d;           /* calibration bias */
+    --mono:'IBM Plex Mono',monospace; --serif:'Newsreader',serif; --sans:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ink);color:var(--text);font-family:var(--sans);
+    line-height:1.5;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 50% -10%,rgba(79,209,197,.06),transparent 55%);}
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px}
+
+  /* ---- hero ---- */
+  header{padding:64px 0 40px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--pulse);margin-bottom:20px}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5vw,54px);
+    line-height:1.08;letter-spacing:-.01em;max-width:16ch}
+  h1 em{font-style:italic;color:var(--muted)}
+  .sub{margin-top:20px;color:var(--muted);max-width:60ch;font-size:16px}
+  .meta{margin-top:28px;display:flex;gap:28px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .meta b{color:var(--text);font-weight:500}
+
+  /* ---- layout ---- */
+  main{padding:48px 0 80px;display:grid;grid-template-columns:1fr 1fr;gap:32px}
+  @media(max-width:760px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:24px}
+  .card h2{font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:20px;font-weight:500}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-family:var(--mono)}
+  input{width:100%;background:var(--panel-2);border:1px solid var(--line);
+    color:var(--text);padding:9px 11px;border-radius:2px;font-family:var(--mono);
+    font-size:14px;transition:border-color .15s}
+  input:focus{outline:none;border-color:var(--pulse)}
+  .erythroid input{border-left:2px solid var(--pulse)}
+  .hint{font-size:11px;color:var(--dim);margin-top:14px;font-family:var(--mono)}
+
+  button{margin-top:22px;width:100%;background:var(--pulse);color:var(--ink);
+    border:none;padding:13px;border-radius:2px;font-family:var(--mono);
+    font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+    cursor:pointer;transition:opacity .15s}
+  button:hover{opacity:.88} button:disabled{opacity:.4;cursor:wait}
+
+  /* ---- readout ---- */
+  .readout{display:flex;flex-direction:column;gap:18px;min-height:100%}
+  .big{display:flex;align-items:baseline;gap:12px}
+  .big .n{font-family:var(--serif);font-size:64px;line-height:1;letter-spacing:-.02em}
+  .big .u{font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .gap{font-family:var(--mono);font-size:13px;padding:3px 9px;border-radius:2px;
+    display:inline-block}
+  .gap.older{background:rgba(232,163,61,.12);color:var(--warn)}
+  .gap.younger{background:rgba(79,209,197,.12);color:var(--pulse)}
+  .divider{height:1px;background:var(--line);margin:2px 0}
+
+  .alt{background:var(--panel-2);border:1px solid var(--line-bright);
+    border-radius:2px;padding:16px}
+  .alt .row{display:flex;justify-content:space-between;align-items:baseline;
+    font-family:var(--mono);font-size:13px;margin-bottom:8px}
+  .alt .row:last-child{margin-bottom:0}
+  .alt .shift{color:var(--pulse)}
+
+  .bars{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+  .bar{display:grid;grid-template-columns:120px 1fr 52px;align-items:center;gap:10px;
+    font-family:var(--mono);font-size:12px}
+  .bar .name{color:var(--muted)} .bar .name.hot{color:var(--pulse)}
+  .track{height:6px;background:var(--panel-2);border-radius:1px;overflow:hidden}
+  .fill{height:100%;background:var(--dim)} .fill.hot{background:var(--pulse)}
+  .bar .val{text-align:right;color:var(--dim)}
+  .empty{color:var(--dim);font-family:var(--mono);font-size:13px;
+    display:flex;align-items:center;justify-content:center;height:200px;text-align:center}
+  .err{color:var(--warn);font-family:var(--mono);font-size:12px}
+  footer{border-top:1px solid var(--line);padding:28px 0 60px;
+    font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">phenoage-transport</div>
+    <h1>Biological age is measured at sea level. <em>Most people don't live there.</em></h1>
+    <p class="sub">A PhenoAge clinical clock re-fit for a mixed-ancestry cohort in
+      Bogotá (2,600 m). Chronic hypoxia inflates the erythroid markers — RDW, MCV —
+      and a sea-level clock reads it as accelerated aging. This corrects the
+      measurement, not the person.</p>
+    <div class="meta">
+      <span><b>9</b> biomarkers + age</span>
+      <span><b>uLSIF</b> density-ratio adaptation</span>
+      <span><b>ONNX</b> inference</span>
+      <span>calibration bias <b>5.5 → 0.1 yr</b></span>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Biomarker panel</h2>
+      <div class="grid" id="form"></div>
+      <button id="run" onclick="run()">Estimate biological age</button>
+      <p class="hint">Teal-marked fields are altitude-sensitive (erythroid).</p>
+    </section>
+
+    <section class="card">
+      <h2>Readout</h2>
+      <div id="out" class="empty">Enter a panel and estimate to see the result.</div>
+    </section>
+  </main>
+
+  <footer>
+    Synthetic demonstration cohort · PhenoAge coefficients per Levine et al. (2018),
+    NHANES III mortality parameterization.<br>
+    Research artifact — not a medical device, not for clinical or diagnostic use.
+  </footer>
+</div>
+
+<script>
+const FIELDS = [
+  ["albumin","Albumin","g/L",45,0],["creatinine","Creatinine","µmol/L",80,0],
+  ["glucose","Glucose","mmol/L",5.2,0],["crp","CRP","mg/dL",1.0,0],
+  ["lymphocyte_pct","Lymphocytes","%",30,0],["mcv","MCV","fL",92,1],
+  ["rdw","RDW","%",14.5,1],["alkaline_phosphatase","Alk. phosphatase","U/L",75,0],
+  ["wbc","WBC","10³/µL",6.5,0],["age","Chronological age","yr",52,0],
+];
+const form = document.getElementById('form');
+FIELDS.forEach(([k,label,unit,def,ery])=>{
+  const d=document.createElement('div'); if(ery) d.className='erythroid';
+  d.innerHTML=`<label>${label} <span style="color:var(--dim)">${unit}</span></label>
+    <input id="f_${k}" type="number" step="any" value="${def}">`;
+  form.appendChild(d);
+});
+const alt = document.createElement('div');
+alt.innerHTML=`<label>Altitude <span style="color:var(--dim)">m</span></label>
+  <input id="f_altitude_m" type="number" step="any" value="2600">`;
+form.appendChild(alt);
+
+async function run(){
+  const btn=document.getElementById('run'); const out=document.getElementById('out');
+  btn.disabled=true; out.className=''; out.innerHTML='<div class="empty">Running…</div>';
+  const body={}; FIELDS.forEach(([k])=>body[k]=parseFloat(document.getElementById('f_'+k).value));
+  body.altitude_m=parseFloat(document.getElementById('f_altitude_m').value);
+  try{
+    const r=await fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(d.error){out.innerHTML=`<div class="err">${d.error}${d.missing?': '+d.missing.join(', '):''}</div>`;btn.disabled=false;return;}
+    render(d,out);
+  }catch(e){out.innerHTML=`<div class="err">${e.message}</div>`;}
+  btn.disabled=false;
+}
+
+function render(d,out){
+  const gap=d.age_gap_years, older=gap>=0;
+  const contribs=Object.entries(d.explanation);
+  const max=Math.max(...contribs.map(([,v])=>Math.abs(v)),1e-6);
+  const hot=new Set(['rdw','mcv','wbc']);
+  const bars=contribs.slice(0,7).map(([k,v])=>{
+    const h=hot.has(k); const w=(Math.abs(v)/max*100).toFixed(0);
+    return `<div class="bar"><span class="name ${h?'hot':''}">${k}</span>
+      <div class="track"><div class="fill ${h?'hot':''}" style="width:${w}%"></div></div>
+      <span class="val">${v>=0?'+':''}${v.toFixed(2)}</span></div>`;}).join('');
+  let altBlock='';
+  if(d.altitude_corrected){const a=d.altitude_corrected;
+    altBlock=`<div class="alt">
+      <div class="row"><span style="color:var(--muted)">Altitude-corrected (${a.altitude_m} m)</span></div>
+      <div class="row"><span>Phenotypic age</span><b>${a.phenotypic_age} yr</b></div>
+      <div class="row"><span>Corrected gap</span><b>${a.age_gap_years>=0?'+':''}${a.age_gap_years} yr</b></div>
+      <div class="row"><span>Erythroid shift removed</span><span class="shift">${a.shift_years} yr</span></div>
+    </div>`;}
+  out.innerHTML=`<div class="readout">
+    <div>
+      <div class="big"><span class="n">${d.phenotypic_age}</span><span class="u">phenotypic years</span></div>
+      <div style="margin-top:10px"><span class="gap ${older?'older':'younger'}">
+        ${older?'+':''}${gap} yr vs chronological (${d.chronological_age})</span></div>
+    </div>
+    <div class="divider"></div>
+    ${altBlock}
+    <div><div style="font-family:var(--mono);font-size:11px;color:var(--muted);
+      text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px">Feature contribution</div>
+      <div class="bars">${bars}</div></div>
+  </div>`;
+}
+</script>
+</body>
+</html>

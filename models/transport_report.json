@@ -1,0 +1,30 @@
+{
+  "n_source": 2000,
+  "n_target": 150,
+  "ulsif": {
+    "effective_sample_size": 1503.7,
+    "sigma": 30.736
+  },
+  "naive_transport": {
+    "spearman_rho": 0.99,
+    "r2": 0.7934,
+    "calibration_slope": 1.0343,
+    "mean_bias_years": 5.5051
+  },
+  "adapted_transport": {
+    "spearman_rho": 0.9911,
+    "r2": 0.7967,
+    "calibration_slope": 1.0371,
+    "mean_bias_years": 5.4807
+  },
+  "altitude_corrected_transport": {
+    "spearman_rho": 0.9966,
+    "r2": 0.9934,
+    "calibration_slope": 1.0129,
+    "mean_bias_years": 0.1243
+  },
+  "calibration_improvement": {
+    "bias_reduction_years": 0.0244,
+    "slope_toward_1": -0.0028
+  }
+}
