@@ -1,5 +1,6 @@
 {
-  "rewrites": [
-    { "source": "/api/predict", "destination": "/api/predict" }
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/predict.py": { "runtime": "@vercel/python@4.3.0" }
+  }
 }
