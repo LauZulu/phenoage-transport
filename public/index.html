@@ -152,7 +152,7 @@ async function run(){
   const body={}; FIELDS.forEach(([k])=>body[k]=parseFloat(document.getElementById('f_'+k).value));
   body.altitude_m=parseFloat(document.getElementById('f_altitude_m').value);
   try{
-    const r=await fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await fetch('/api/index',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json();
     if(d.error){out.innerHTML=`<div class="err">${d.error}${d.missing?': '+d.missing.join(', '):''}</div>`;btn.disabled=false;return;}
     render(d,out);
